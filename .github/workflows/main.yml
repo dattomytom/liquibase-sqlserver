@@ -1,0 +1,57 @@
+name: Liquibase Manual CI/CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Liquibase Action (update, rollback, status)'
+        required: true
+        default: 'update'
+      rollbackTag:
+        description: 'Tag name for rollback (required if action=rollback)'
+        required: false
+
+jobs:
+  liquibase:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Download Liquibase
+        run: |
+          curl -Lo liquibase.tar.gz https://github.com/liquibase/liquibase/releases/download/v4.28.0/liquibase-4.28.0.tar.gz
+          tar -xzf liquibase.tar.gz
+          sudo mv liquibase /usr/local/liquibase
+          echo "/usr/local/liquibase" >> $GITHUB_PATH
+
+      - name: Run Liquibase Action
+        env:
+          LIQUIBASE_USERNAME: ${{ secrets.LIQUIBASE_USERNAME }}
+          LIQUIBASE_PASSWORD: ${{ secrets.LIQUIBASE_PASSWORD }}
+          LIQUIBASE_URL: ${{ secrets.LIQUIBASE_URL }}
+        run: |
+          echo "changeLogFile=changeLog/db.changelog-master.xml" > liquibase.properties
+          echo "url=$LIQUIBASE_URL" >> liquibase.properties
+          echo "username=$LIQUIBASE_USERNAME" >> liquibase.properties
+          echo "password=$LIQUIBASE_PASSWORD" >> liquibase.properties
+          echo "driver=com.microsoft.sqlserver.jdbc.SQLServerDriver" >> liquibase.properties
+          echo "classpath=driver/mssql-jdbc-12.10.1.jre11.jar" >> liquibase.properties
+
+          if [ "${{ github.event.inputs.action }}" == "update" ]; then
+            liquibase --defaultsFile=liquibase.properties update
+          elif [ "${{ github.event.inputs.action }}" == "status" ]; then
+            liquibase --defaultsFile=liquibase.properties status
+          elif [ "${{ github.event.inputs.action }}" == "rollback" ]; then
+            liquibase --defaultsFile=liquibase.properties rollback ${{ github.event.inputs.rollbackTag }}
+          else
+            echo "Unknown action: ${{ github.event.inputs.action }}"
+            exit 1
+          fi
