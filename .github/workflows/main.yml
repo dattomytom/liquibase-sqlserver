@@ -47,7 +47,7 @@ jobs:
           ACTION: ${{ github.event.inputs.action }}
           ROLLBACK_TAG: ${{ github.event.inputs.rollbackTag }}
         run: |
-          echo "changeLogFile=changelogs/master-changelog.xml" > liquibase-ci.properties
+          echo "changeLogFile=changelog/master-changelog.xml" > liquibase-ci.properties
           echo "url=$DB_URL" >> liquibase-ci.properties
           echo "username=$DB_USERNAME" >> liquibase-ci.properties
           echo "password=$DB_PASSWORD" >> liquibase-ci.properties
