@@ -43,7 +43,7 @@ jobs:
           echo "username=$LIQUIBASE_USERNAME" >> liquibase.properties
           echo "password=$LIQUIBASE_PASSWORD" >> liquibase.properties
           echo "driver=com.microsoft.sqlserver.jdbc.SQLServerDriver" >> liquibase.properties
-          echo "classpath=driver/mssql-jdbc-12.10.1.jre11.jar" >> liquibase.properties
+          echo "classpath=drivers/mssql-jdbc-12.10.1.jre11.jar" >> liquibase.properties
 
           if [ "${{ github.event.inputs.action }}" == "update" ]; then
             liquibase --defaultsFile=liquibase.properties update
