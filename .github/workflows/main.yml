@@ -30,11 +30,10 @@ jobs:
           curl -Lo liquibase.zip https://github.com/liquibase/liquibase/releases/download/v4.28.0/liquibase-4.28.0.zip
           unzip liquibase.zip -d liquibase-dist
           sudo mv liquibase-dist /usr/local/liquibase
-          sudo ln -s /usr/local/liquibase/liquibase /usr/local/bin/liquibase
+          sudo ln -sf /usr/local/liquibase/liquibase /usr/local/bin/liquibase
 
       - name: Verify Liquibase installation (Safe)
         run: |
-          # Tạm rename để tránh Liquibase tự đọc
           if [ -f liquibase.properties ]; then mv liquibase.properties liquibase.properties.bak; fi
           liquibase --version
           if [ -f liquibase.properties.bak ]; then mv liquibase.properties.bak liquibase.properties; fi
@@ -44,6 +43,8 @@ jobs:
           DB_USERNAME: ${{ secrets.LIQUIBASE_USERNAME }}
           DB_PASSWORD: ${{ secrets.LIQUIBASE_PASSWORD }}
           DB_URL: ${{ secrets.LIQUIBASE_URL }}
+          ACTION: ${{ github.event.inputs.action }}
+          ROLLBACK_TAG: ${{ github.event.inputs.rollbackTag }}
         run: |
           echo "changeLogFile=changelogs/master-changelog.xml" > liquibase-ci.properties
           echo "url=$DB_URL" >> liquibase-ci.properties
@@ -52,20 +53,22 @@ jobs:
           echo "driver=com.microsoft.sqlserver.jdbc.SQLServerDriver" >> liquibase-ci.properties
           echo "classpath=drivers/mssql-jdbc-12.10.1.jre11.jar" >> liquibase-ci.properties
 
-          # Kiểm tra file driver JDBC
           if [ ! -f drivers/mssql-jdbc-12.10.1.jre11.jar ]; then
             echo "❌ Missing JDBC driver: drivers/mssql-jdbc-12.10.1.jre11.jar"
             exit 1
           fi
 
-          # Chạy Liquibase với hành động được chọn
-          if [ "${{ github.event.inputs.action }}" == "update" ]; then
-            liquibase --defaultsFile=liquibase-ci.properties update
-          elif [ "${{ github.event.inputs.action }}" == "status" ]; then
-            liquibase --defaultsFile=liquibase-ci.properties status
-          elif [ "${{ github.event.inputs.action }}" == "rollback" ]; then
-            liquibase --defaultsFile=liquibase-ci.properties rollback ${{ github.event.inputs.rollbackTag }}
+          if [ "$ACTION" = "update" ]; then
+            liquibase --defaultsFile=liquibase-ci.properties --log-level=debug update
+          elif [ "$ACTION" = "status" ]; then
+            liquibase --defaultsFile=liquibase-ci.properties --log-level=debug status
+          elif [ "$ACTION" = "rollback" ]; then
+            if [ -z "$ROLLBACK_TAG" ]; then
+              echo "Rollback tag is required for rollback action"
+              exit 1
+            fi
+            liquibase --defaultsFile=liquibase-ci.properties --log-level=debug rollback "$ROLLBACK_TAG"
           else
-            echo "Unknown action: ${{ github.event.inputs.action }}"
+            echo "Unknown action: $ACTION"
             exit 1
           fi
