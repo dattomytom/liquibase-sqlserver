@@ -25,18 +25,19 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
 
-      - name: Download Liquibase CLI
+      - name: Check Java Version
+        run: java -version
+
+      - name: Download Liquibase CLI 4.28.0
         run: |
           curl -Lo liquibase.zip https://github.com/liquibase/liquibase/releases/download/v4.28.0/liquibase-4.28.0.zip
           unzip liquibase.zip -d liquibase-dist
           sudo mv liquibase-dist /usr/local/liquibase
           sudo ln -sf /usr/local/liquibase/liquibase /usr/local/bin/liquibase
 
-      - name: Verify Liquibase installation (Safe)
+      - name: Verify Liquibase installation
         run: |
-          if [ -f liquibase.properties ]; then mv liquibase.properties liquibase.properties.bak; fi
           liquibase --version
-          if [ -f liquibase.properties.bak ]; then mv liquibase.properties.bak liquibase.properties; fi
 
       - name: Run Liquibase Action
         env:
@@ -53,10 +54,15 @@ jobs:
           echo "driver=com.microsoft.sqlserver.jdbc.SQLServerDriver" >> liquibase-ci.properties
           echo "classpath=drivers/mssql-jdbc-12.10.1.jre11.jar" >> liquibase-ci.properties
 
+          echo "🔍 Checking JDBC driver..."
           if [ ! -f drivers/mssql-jdbc-12.10.1.jre11.jar ]; then
             echo "❌ Missing JDBC driver: drivers/mssql-jdbc-12.10.1.jre11.jar"
             exit 1
+          else
+            echo "✅ JDBC driver found."
           fi
+
+          echo "🔧 Executing Liquibase action: $ACTION"
 
           if [ "$ACTION" = "update" ]; then
             liquibase --defaultsFile=liquibase-ci.properties --log-level=debug update
@@ -64,11 +70,11 @@ jobs:
             liquibase --defaultsFile=liquibase-ci.properties --log-level=debug status
           elif [ "$ACTION" = "rollback" ]; then
             if [ -z "$ROLLBACK_TAG" ]; then
-              echo "Rollback tag is required for rollback action"
+              echo "❌ Rollback tag is required for rollback action"
               exit 1
             fi
             liquibase --defaultsFile=liquibase-ci.properties --log-level=debug rollback "$ROLLBACK_TAG"
           else
-            echo "Unknown action: $ACTION"
+            echo "❌ Unknown action: $ACTION"
             exit 1
           fi
