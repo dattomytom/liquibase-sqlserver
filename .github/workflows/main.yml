@@ -25,15 +25,22 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
 
-      - name: Download and Set Up Liquibase
+      - name: Download Liquibase CLI
         run: |
           curl -Lo liquibase.zip https://github.com/liquibase/liquibase/releases/download/v4.28.0/liquibase-4.28.0.zip
           unzip liquibase.zip -d liquibase-dist
           sudo mv liquibase-dist /usr/local/liquibase
           sudo ln -s /usr/local/liquibase/liquibase /usr/local/bin/liquibase
-          liquibase --version
 
-      - name: Run Liquibase
+      - name: Verify Liquibase installation
+        run: liquibase --version
+
+      - name: Debug classpath
+        run: |
+          echo "Checking driver folder content:"
+          ls -la drivers
+
+      - name: Run Liquibase Action
         env:
           DB_USERNAME: ${{ secrets.LIQUIBASE_USERNAME }}
           DB_PASSWORD: ${{ secrets.LIQUIBASE_PASSWORD }}
@@ -44,7 +51,9 @@ jobs:
           echo "username=$DB_USERNAME" >> liquibase.properties
           echo "password=$DB_PASSWORD" >> liquibase.properties
           echo "driver=com.microsoft.sqlserver.jdbc.SQLServerDriver" >> liquibase.properties
-          echo "classpath=drivers/mssql-jdbc-12.10.1.jre11.jar" >> liquibase.properties
+          echo "classpath=./drivers/mssql-jdbc-12.10.1.jre11.jar" >> liquibase.properties
+
+          echo "Running Liquibase action: ${{ github.event.inputs.action }}"
 
           if [ "${{ github.event.inputs.action }}" == "update" ]; then
             liquibase --defaultsFile=liquibase.properties update
