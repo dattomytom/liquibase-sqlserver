@@ -32,35 +32,39 @@ jobs:
           sudo mv liquibase-dist /usr/local/liquibase
           sudo ln -s /usr/local/liquibase/liquibase /usr/local/bin/liquibase
 
-      - name: Verify Liquibase installation
-        run: liquibase --version
-
-      - name: Debug classpath
+      - name: Verify Liquibase installation (Safe)
         run: |
-          echo "Checking driver folder content:"
-          ls -la drivers
+          # Tạm rename để tránh Liquibase tự đọc
+          if [ -f liquibase.properties ]; then mv liquibase.properties liquibase.properties.bak; fi
+          liquibase --version
+          if [ -f liquibase.properties.bak ]; then mv liquibase.properties.bak liquibase.properties; fi
 
       - name: Run Liquibase Action
         env:
-          DB_USERNAME: ${{ secrets.LIQUIBASE_USERNAME }}
-          DB_PASSWORD: ${{ secrets.LIQUIBASE_PASSWORD }}
-          DB_URL: ${{ secrets.LIQUIBASE_URL }}
+          LIQUIBASE_USERNAME: ${{ secrets.LIQUIBASE_USERNAME }}
+          LIQUIBASE_PASSWORD: ${{ secrets.LIQUIBASE_PASSWORD }}
+          LIQUIBASE_URL: ${{ secrets.LIQUIBASE_URL }}
         run: |
-          echo "changeLogFile=changelogs/master-changelog.xml" > liquibase.properties
-          echo "url=$DB_URL" >> liquibase.properties
-          echo "username=$DB_USERNAME" >> liquibase.properties
-          echo "password=$DB_PASSWORD" >> liquibase.properties
-          echo "driver=com.microsoft.sqlserver.jdbc.SQLServerDriver" >> liquibase.properties
-          echo "classpath=./drivers/mssql-jdbc-12.10.1.jre11.jar" >> liquibase.properties
+          echo "changeLogFile=changelogs/master-changelog.xml" > liquibase-ci.properties
+          echo "url=$LIQUIBASE_URL" >> liquibase-ci.properties
+          echo "username=$LIQUIBASE_USERNAME" >> liquibase-ci.properties
+          echo "password=$LIQUIBASE_PASSWORD" >> liquibase-ci.properties
+          echo "driver=com.microsoft.sqlserver.jdbc.SQLServerDriver" >> liquibase-ci.properties
+          echo "classpath=drivers/mssql-jdbc-12.10.1.jre11.jar" >> liquibase-ci.properties
 
-          echo "Running Liquibase action: ${{ github.event.inputs.action }}"
+          # Kiểm tra file driver JDBC
+          if [ ! -f drivers/mssql-jdbc-12.10.1.jre11.jar ]; then
+            echo "❌ Missing JDBC driver: drivers/mssql-jdbc-12.10.1.jre11.jar"
+            exit 1
+          fi
 
+          # Chạy Liquibase với hành động được chọn
           if [ "${{ github.event.inputs.action }}" == "update" ]; then
-            liquibase --defaultsFile=liquibase.properties update
+            liquibase --defaultsFile=liquibase-ci.properties update
           elif [ "${{ github.event.inputs.action }}" == "status" ]; then
-            liquibase --defaultsFile=liquibase.properties status
+            liquibase --defaultsFile=liquibase-ci.properties status
           elif [ "${{ github.event.inputs.action }}" == "rollback" ]; then
-            liquibase --defaultsFile=liquibase.properties rollback ${{ github.event.inputs.rollbackTag }}
+            liquibase --defaultsFile=liquibase-ci.properties rollback ${{ github.event.inputs.rollbackTag }}
           else
             echo "Unknown action: ${{ github.event.inputs.action }}"
             exit 1
