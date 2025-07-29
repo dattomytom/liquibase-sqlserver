@@ -25,15 +25,15 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
 
-      - name: Download Liquibase CLI
+      - name: Download and Set Up Liquibase
         run: |
           curl -Lo liquibase.zip https://github.com/liquibase/liquibase/releases/download/v4.28.0/liquibase-4.28.0.zip
-          unzip liquibase.zip
-          chmod +x liquibase
-          sudo mv liquibase /usr/local/bin/liquibase  # ✅ đặt lệnh CLI vào PATH
-          echo "Liquibase installed"
+          unzip liquibase.zip -d liquibase-dist
+          sudo mv liquibase-dist /usr/local/liquibase
+          sudo ln -s /usr/local/liquibase/liquibase /usr/local/bin/liquibase
+          liquibase --version
 
-      - name: Run Liquibase Action
+      - name: Run Liquibase
         env:
           DB_USERNAME: ${{ secrets.LIQUIBASE_USERNAME }}
           DB_PASSWORD: ${{ secrets.LIQUIBASE_PASSWORD }}
