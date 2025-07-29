@@ -29,8 +29,9 @@ jobs:
         run: |
           curl -Lo liquibase.zip https://github.com/liquibase/liquibase/releases/download/v4.28.0/liquibase-4.28.0.zip
           unzip liquibase.zip
-          sudo mv liquibase-4.28.0 /usr/local/liquibase
-          echo "/usr/local/liquibase" >> $GITHUB_PATH
+          chmod +x liquibase
+          sudo mv liquibase /usr/local/bin/liquibase  # ✅ đặt lệnh CLI vào PATH
+          echo "Liquibase installed"
 
       - name: Run Liquibase Action
         env:
@@ -45,14 +46,12 @@ jobs:
           echo "driver=com.microsoft.sqlserver.jdbc.SQLServerDriver" >> liquibase.properties
           echo "classpath=drivers/mssql-jdbc-12.10.1.jre11.jar" >> liquibase.properties
 
-          echo "Running Liquibase Action: ${{ github.event.inputs.action }}"
-
           if [ "${{ github.event.inputs.action }}" == "update" ]; then
-            /usr/local/liquibase/liquibase --defaultsFile=liquibase.properties update
+            liquibase --defaultsFile=liquibase.properties update
           elif [ "${{ github.event.inputs.action }}" == "status" ]; then
-            /usr/local/liquibase/liquibase --defaultsFile=liquibase.properties status
+            liquibase --defaultsFile=liquibase.properties status
           elif [ "${{ github.event.inputs.action }}" == "rollback" ]; then
-            /usr/local/liquibase/liquibase --defaultsFile=liquibase.properties rollback ${{ github.event.inputs.rollbackTag }}
+            liquibase --defaultsFile=liquibase.properties rollback ${{ github.event.inputs.rollbackTag }}
           else
             echo "Unknown action: ${{ github.event.inputs.action }}"
             exit 1
