@@ -28,30 +28,31 @@ jobs:
       - name: Download Liquibase CLI
         run: |
           curl -Lo liquibase.zip https://github.com/liquibase/liquibase/releases/download/v4.28.0/liquibase-4.28.0.zip
-          unzip liquibase.zip -d liquibase
-          sudo mv liquibase /usr/local/liquibase
+          unzip liquibase.zip
+          sudo mv liquibase-4.28.0 /usr/local/liquibase
           echo "/usr/local/liquibase" >> $GITHUB_PATH
-          echo "/usr/local/liquibase/liquibase" >> $GITHUB_PATH
 
       - name: Run Liquibase Action
         env:
-          LIQUIBASE_USERNAME: ${{ secrets.LIQUIBASE_USERNAME }}
-          LIQUIBASE_PASSWORD: ${{ secrets.LIQUIBASE_PASSWORD }}
-          LIQUIBASE_URL: ${{ secrets.LIQUIBASE_URL }}
+          DB_USERNAME: ${{ secrets.LIQUIBASE_USERNAME }}
+          DB_PASSWORD: ${{ secrets.LIQUIBASE_PASSWORD }}
+          DB_URL: ${{ secrets.LIQUIBASE_URL }}
         run: |
           echo "changeLogFile=changelogs/master-changelog.xml" > liquibase.properties
-          echo "url=$LIQUIBASE_URL" >> liquibase.properties
-          echo "username=$LIQUIBASE_USERNAME" >> liquibase.properties
-          echo "password=$LIQUIBASE_PASSWORD" >> liquibase.properties
+          echo "url=$DB_URL" >> liquibase.properties
+          echo "username=$DB_USERNAME" >> liquibase.properties
+          echo "password=$DB_PASSWORD" >> liquibase.properties
           echo "driver=com.microsoft.sqlserver.jdbc.SQLServerDriver" >> liquibase.properties
           echo "classpath=drivers/mssql-jdbc-12.10.1.jre11.jar" >> liquibase.properties
 
+          echo "Running Liquibase Action: ${{ github.event.inputs.action }}"
+
           if [ "${{ github.event.inputs.action }}" == "update" ]; then
-            liquibase --defaultsFile=liquibase.properties update
+            /usr/local/liquibase/liquibase --defaultsFile=liquibase.properties update
           elif [ "${{ github.event.inputs.action }}" == "status" ]; then
-            liquibase --defaultsFile=liquibase.properties status
+            /usr/local/liquibase/liquibase --defaultsFile=liquibase.properties status
           elif [ "${{ github.event.inputs.action }}" == "rollback" ]; then
-            liquibase --defaultsFile=liquibase.properties rollback ${{ github.event.inputs.rollbackTag }}
+            /usr/local/liquibase/liquibase --defaultsFile=liquibase.properties rollback ${{ github.event.inputs.rollbackTag }}
           else
             echo "Unknown action: ${{ github.event.inputs.action }}"
             exit 1
