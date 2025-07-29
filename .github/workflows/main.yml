@@ -41,14 +41,14 @@ jobs:
 
       - name: Run Liquibase Action
         env:
-          LIQUIBASE_USERNAME: ${{ secrets.LIQUIBASE_USERNAME }}
-          LIQUIBASE_PASSWORD: ${{ secrets.LIQUIBASE_PASSWORD }}
-          LIQUIBASE_URL: ${{ secrets.LIQUIBASE_URL }}
+          DB_USERNAME: ${{ secrets.LIQUIBASE_USERNAME }}
+          DB_PASSWORD: ${{ secrets.LIQUIBASE_PASSWORD }}
+          DB_URL: ${{ secrets.LIQUIBASE_URL }}
         run: |
           echo "changeLogFile=changelogs/master-changelog.xml" > liquibase-ci.properties
-          echo "url=$LIQUIBASE_URL" >> liquibase-ci.properties
-          echo "username=$LIQUIBASE_USERNAME" >> liquibase-ci.properties
-          echo "password=$LIQUIBASE_PASSWORD" >> liquibase-ci.properties
+          echo "url=$DB_URL" >> liquibase-ci.properties
+          echo "username=$DB_USERNAME" >> liquibase-ci.properties
+          echo "password=$DB_PASSWORD" >> liquibase-ci.properties
           echo "driver=com.microsoft.sqlserver.jdbc.SQLServerDriver" >> liquibase-ci.properties
           echo "classpath=drivers/mssql-jdbc-12.10.1.jre11.jar" >> liquibase-ci.properties
 
