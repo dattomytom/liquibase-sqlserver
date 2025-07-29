@@ -29,8 +29,10 @@ jobs:
         run: |
           curl -Lo liquibase.tar.gz https://github.com/liquibase/liquibase/releases/download/v4.28.0/liquibase-4.28.0.tar.gz
           tar -xzf liquibase.tar.gz
+          mv liquibase-4.28.0 liquibase
           sudo mv liquibase /usr/local/liquibase
           echo "/usr/local/liquibase" >> $GITHUB_PATH
+          echo "/usr/local/liquibase/bin" >> $GITHUB_PATH
 
       - name: Run Liquibase Action
         env:
@@ -38,7 +40,7 @@ jobs:
           LIQUIBASE_PASSWORD: ${{ secrets.LIQUIBASE_PASSWORD }}
           LIQUIBASE_URL: ${{ secrets.LIQUIBASE_URL }}
         run: |
-          echo "changeLogFile=changeLog/db.changelog-master.xml" > liquibase.properties
+          echo "changeLogFile=changelogs/master-changelog.xml" > liquibase.properties
           echo "url=$LIQUIBASE_URL" >> liquibase.properties
           echo "username=$LIQUIBASE_USERNAME" >> liquibase.properties
           echo "password=$LIQUIBASE_PASSWORD" >> liquibase.properties
