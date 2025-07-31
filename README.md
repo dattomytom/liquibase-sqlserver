@@ -1,6 +1,6 @@
 ## At Your Local
-Step 1 : Install Liquibase local at [Google](https://www.google.com) <br/>
-Step 2 : Clone pr downlload this project into your local <br/>
+Step 1 : [Install](https://docs.liquibase.com/start/install/liquibase-windows.html) Liquibase your local <br/>
+Step 2 : Clone or downlload this project into your local <br/>
 Step 3 : At folder your clone <br/>
   - a. Edit value ***url,user,password*** <br/>
        Example: <br/>
